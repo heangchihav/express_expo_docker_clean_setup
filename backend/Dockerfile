@@ -10,17 +10,16 @@ RUN groupadd -r appuser && useradd -r -g appuser -s /bin/false appuser
 # Set the working directory
 WORKDIR /app
 
-# Copy package.json, package-lock.json, and tsconfig.json (needed for build)
+# Copy package.json and tsconfig.json first (needed for build)
 COPY package*.json tsconfig.json ./
 
-# Install dependencies (including Prisma Client)
-RUN npm install && npm cache clean --force
-
-# Copy the Prisma schema
+# Copy the Prisma schema before npm install
 COPY prisma ./prisma/
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Install dependencies and generate Prisma Client
+RUN npm install && \
+    npx prisma generate && \
+    npm cache clean --force
 
 # Copy the rest of the application source code
 COPY . .
@@ -49,5 +48,5 @@ HEALTHCHECK --interval=30s --timeout=3s \
 # Expose the application's port
 EXPOSE 3000
 
-# Start the application with module-alias support
+# Start the application
 CMD ["node", "dist/server.js"]
